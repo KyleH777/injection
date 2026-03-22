@@ -8,22 +8,27 @@ A collection of SQL injection payloads, a purposely vulnerable test application,
 
 ```
 .
-├── payloads/          # Categorized SQL injection payloads
+├── app.py                # Vulnerable Flask app (0.0.0.0:5000)
+├── init_lab.py           # Database initializer (creates staging.db)
+├── audit_suite.py        # Automated injection test runner
+├── requirements.txt      # Python dependencies
+├── payloads/             # Categorized SQL injection payloads
 │   ├── auth-bypass.txt
 │   ├── union-based.txt
 │   ├── blind-boolean.txt
 │   ├── blind-time.txt
 │   ├── error-based.txt
 │   └── stacked-queries.txt
-├── vulnerable-app/    # Intentionally vulnerable Flask app for practice
+├── vulnerable-app/       # Extended vulnerable Flask app (multi-endpoint)
 │   ├── app.py
 │   ├── setup_db.py
 │   └── requirements.txt
-├── scripts/           # Automated testing scripts
+├── scripts/              # Automated testing scripts
 │   ├── sqli_tester.py
 │   └── report.py
-└── docs/              # Detection & prevention guidance
-    └── prevention.md
+└── docs/                 # Guides & references
+    ├── prevention.md
+    └── deployment-guide.md
 ```
 
 ## Quick Start
@@ -66,6 +71,10 @@ Each file in `payloads/` contains ready-to-use injection strings organized by te
 | Blind (Time) | `blind-time.txt` | Infer data from response delays |
 | Error-Based | `error-based.txt` | Extract data from error messages |
 | Stacked Queries | `stacked-queries.txt` | Execute multiple statements |
+
+## Deployment
+
+See [docs/deployment-guide.md](docs/deployment-guide.md) for full Ubuntu/Debian setup instructions covering system updates, Python installation, virtual environments, dependency installation, and running the app in the background with `nohup` or `screen`.
 
 ## License
 
